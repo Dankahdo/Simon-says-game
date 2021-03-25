@@ -1,15 +1,24 @@
 // global constants
-const clueHoldTime = 1000; //how long to hold each clue's light/sound
-const cluePauseTime = 333; //how long to pause in between clues
-const nextClueWaitTime = 1000; //how long to wait before starting playback of the clue sequence
+const clueStartHoldTime = 1000; //how long to hold each clue's light/sound
+const clueStartPauseTime = 333; //how long to pause in between clues
+const nextStartClueWaitTime = 1000; //how long to wait before starting playback of the clue sequence
+const intervalTime = 6000;
 
 //golbal variables
+var clueHoldTime = clueStartHoldTime; //how long to hold each clue's light/sound
+var cluePauseTime = clueStartPauseTime; //how long to pause in between clues
+var nextClueWaitTime = nextStartClueWaitTime; //how long to wait before starting playback of the clue sequence
+
 var pattern = [2, 2, 4, 3, 2, 1, 2, 4];
 var progress = 0; 
 var gamePlaying = false;
 var tonePlaying = false;
 var volume = 0.5;  //must be between 0.0 and 1.0
+
 var guessCounter = 0;
+var wrongCounter = 0;
+
+var timer;
 
 function startGame(){
     //initialize game variables
@@ -29,7 +38,14 @@ function stopGame(){
   gamePlaying = false;
   // swap the Start and Stop buttons
   document.getElementById("startBtn").classList.remove("hidden");
-  document.getElementById("stopBtn").classList.add("hidden");
+  document.getElementById("stopBtn").classList.add("hidden");  
+  
+  clueHoldTime = clueStartHoldTime; 
+  cluePauseTime = clueStartPauseTime; 
+  nextClueWaitTime = nextStartClueWaitTime; 
+  
+  wrongCounter = 0;
+  clearInterval(timer);
 }
 
 // Sound Synthesis Functions
@@ -57,6 +73,8 @@ function startTone(btn){
 function stopTone(){
     g.gain.setTargetAtTime(0,context.currentTime + 0.05,0.025)
     tonePlaying = false
+  
+
 }
 
 //Page Initialization
@@ -85,6 +103,8 @@ function playSingleClue(btn){
 }
 
 function playClueSequence(){
+  clearInterval(timer);
+  
   guessCounter = 0;
   let delay = nextClueWaitTime; //set delay to initial wait time
   for(let i=0;i<=progress;i++){ // for each clue that is revealed so far
@@ -93,6 +113,8 @@ function playClueSequence(){
     delay += clueHoldTime 
     delay += cluePauseTime;
   }
+  
+  timer = setInterval(loseGame, intervalTime);
 }
 
 function loseGame(){
@@ -118,13 +140,21 @@ function guess(btn){
           winGame();
         }else{
           progress++;
+          clueHoldTime /= 1.15;
+          cluePauseTime /= 1.15;
+          clueHoldTime /= 1.15;
           playClueSequence();
         }
       }else{
         guessCounter++;
       }
     }else{
-      loseGame();
+      wrongCounter++;
+      if(wrongCounter == 3)
+      {
+        loseGame();
+      }
+      playClueSequence();
     }
   }
 }    
